@@ -113,6 +113,11 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     @scheme = @secure ? 'https' : 'http'
 
     @sequence = @initial_sequence ? @initial_sequence : @sequencedb.read
+    
+    if @sequence.to_s.empty? 
+      @sequence = 0
+    end 
+
 
   end
 
@@ -123,12 +128,23 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       end
 
       def read
-        ::File.exists?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
+        if ::File.exists?(@sequence_path) 
+          x = ::File.readlines(@sequence_path)
+          if x.nil? 
+           return 0
+          else
+            #puts x[0]
+	          #return 0
+            return x[0].gsub!(/\r?\n?/,"")
+          end
+        else
+         return 0
+        end 
       end
 
       def write(sequence = nil)
         sequence = 0 if sequence.nil?
-        ::File.write(@sequence_path, sequence.to_s)
+        ::File.write(@sequence_path, sequence.to_s + "\n", 0)
       end
     end
   end
@@ -144,6 +160,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       request.basic_auth(@username, @password.value) if @username && @password
       http.request request do |response|
         raise ArgumentError, "Database not found!" if response.code == "404"
+        raise Net::HTTPBadResponse, "Malformed sequence?!" if response.code == "400"
         response.read_body do |chunk|
           buffer.extract(chunk).each do |changes|
             # If no changes come since the last heartbeat period, a blank line is
@@ -160,8 +177,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
         end
       end
     end
-  rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
-    Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+  rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
     @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
     retry if reconnect?
   rescue Errno::EBADF => e
@@ -169,6 +185,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     retry if reconnect?
   rescue ArgumentError => e
     @logger.error("Unable to connect to database", :db => @db, :error => e.to_s)
+    retry if reconnect?
+  rescue Net::HTTPBadResponse => e
+    @logger.error("Bad response error", :db => @db, :error => e.to_s)
+    @sequence = 0
     retry if reconnect?
   end
 
