@@ -62,7 +62,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # If you specify this value, it is anticipated that you will
   # only be doing so for an initial read under special circumstances
   # and that you will unset this value afterwards.
-  config :initial_sequence, :validate => :number
+  config :initial_sequence, :validate => :string
 
   # Preserve the CouchDB document revision "_rev" value in the
   # output.
