@@ -145,7 +145,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       def write(sequence = nil)
         sequence = 0 if sequence.nil?
         ::File.write(@sequence_path, sequence.to_s + "\n", 0)
-        chmod(0666, @sequence_path)
+        ::File.chmod(0666, @sequence_path)
       end
     end
   end
