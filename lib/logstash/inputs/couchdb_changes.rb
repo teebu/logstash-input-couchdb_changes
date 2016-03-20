@@ -135,7 +135,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
           else
             #puts x[0]
 	          #return 0
-            return x[0].gsub!(/\r?\n?/,"")
+            return x[0].gsub!(/\r?\n?/,"") rescue return 0
           end
         else
          return 0
@@ -145,6 +145,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       def write(sequence = nil)
         sequence = 0 if sequence.nil?
         ::File.write(@sequence_path, sequence.to_s + "\n", 0)
+        chmod(0666, @sequence_path)
       end
     end
   end
