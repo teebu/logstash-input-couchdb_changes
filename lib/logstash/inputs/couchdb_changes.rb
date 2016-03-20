@@ -128,7 +128,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       end
 
       def read
-        if ::File.exists?(@sequence_path) 
+        if ::File.exists?(@sequence_path)
           x = ::File.readlines(@sequence_path)
           if x.nil? or x[0].nil?
            return 0
@@ -145,7 +145,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       def write(sequence = nil)
         sequence = 0 if sequence.nil?
         ::File.write(@sequence_path, sequence.to_s + "\n", 0)
-        ::File.chmod(0666, @sequence_path)
+        ::File.chmod(0777, @sequence_path) if ::File.stat(@sequence_path).grpowned? and !::File.stat(@sequence_path).world_writable?
       end
     end
   end
