@@ -130,7 +130,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       def read
         if ::File.exists?(@sequence_path) 
           x = ::File.readlines(@sequence_path)
-          if x.nil? 
+          if x.nil? or x[0].nil?
            return 0
           else
             #puts x[0]
