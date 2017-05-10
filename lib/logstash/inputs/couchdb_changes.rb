@@ -179,7 +179,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       end
     end
   rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-    @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
+    @logger.error("Connection problem encountered with " + @db.to_s + " index: Retrying connection in " + @reconnect_delay.to_s + " seconds...", :error => e.to_s)
     retry if reconnect?
   rescue Errno::EBADF => e
     @logger.error("Unable to connect: Bad file descriptor: ", :error => e.to_s)
